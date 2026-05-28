@@ -7,18 +7,23 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { TweetService } from './tweet.service';
 import { CreateTweetDto } from './dto/create-tweet.dto';
 import { UpdateTweetDto } from './dto/update-tweet.dto';
+import { PaginationDto } from 'src/common/pagination/dto/pagination-query.dto';
 
 @Controller('tweet')
 export class TweetController {
   constructor(private readonly tweetService: TweetService) {}
 
   @Get(':userid')
-  getUserId(@Param('userid', ParseIntPipe) userid: number) {
-    return this.tweetService.getTweets(userid)
+  getUserId(
+    @Param('userid', ParseIntPipe) userid: number,
+    @Query() paginationQueryDto: PaginationDto,
+  ) {
+    return this.tweetService.getTweets(userid, paginationQueryDto);
   }
 
   @Post()
@@ -29,11 +34,6 @@ export class TweetController {
   @Get()
   findAll() {
     return this.tweetService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tweetService.findOne(+id);
   }
 
   @Patch()

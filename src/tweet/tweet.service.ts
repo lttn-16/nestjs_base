@@ -1,11 +1,13 @@
-import { Injectable, Patch } from '@nestjs/common';
+import { Injectable, NotFoundException, Patch } from '@nestjs/common';
 import { CreateTweetDto } from './dto/create-tweet.dto';
 import { UpdateTweetDto } from './dto/update-tweet.dto';
 import { UsersService } from 'src/users/users.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Tweet } from './entities/tweet.entity';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 import { HashtagService } from 'src/hashtag/hashtag.service';
+import { GetTweetQueryDto } from './dto/get-tweet.dto';
+import { PaginationProvider } from 'src/common/pagination/pagination.provider';
 
 @Injectable()
 export class TweetService {
@@ -15,6 +17,8 @@ export class TweetService {
 
     @InjectRepository(Tweet)
     private tweetRepository: Repository<Tweet>,
+
+    private readonly paginationProvider: PaginationProvider,
   ) {}
 
   public async create(createTweetDto: CreateTweetDto) {
@@ -30,15 +34,28 @@ export class TweetService {
     return await this.tweetRepository.save(tweet);
   }
 
-  public async getTweets(userId: number) {
-    const tweets = this.tweetRepository.find({
-      where: { user: { id: userId } },
+  public async getTweets(userId: number, paginationQueryDto: GetTweetQueryDto) {
+    let user = await this.userService.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found!');
+    }
+    const searchOptions: FindManyOptions<Tweet> = {
+      where: {
+        user: { id: userId },
+      },
       relations: {
         user: true,
-        hashtags: true
+        hashtags: true,
       },
-    });
-    return tweets;
+      order: {
+        createdAt: 'DESC',
+      },
+    };
+    return await this.paginationProvider.paginate(
+      this.tweetRepository,
+      paginationQueryDto,
+      searchOptions,
+    );
   }
 
   findAll() {
