@@ -1,10 +1,10 @@
-import { Injectable, forwardRef, Inject, RequestTimeoutException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, RequestTimeoutException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Profile } from 'src/profile/entities/profile.entity';
+import { HashingProvider } from 'src/auth/provider/hashing.provider';
 
 @Injectable()
 export class UsersService {
@@ -12,8 +12,8 @@ export class UsersService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
 
-    @InjectRepository(Profile)
-    private profileRepository: Repository<Profile>,
+    @Inject(forwardRef(() => HashingProvider)) 
+    private readonly hashingProvider: HashingProvider,
   ) {}
 
   public async create(userDto: CreateUserDto) {
@@ -24,7 +24,11 @@ export class UsersService {
     if (existEmail) {
       throw new Error('User with this email already exists');
     }
-    const newUser = this.userRepository.create(userDto);
+
+    const newUser = this.userRepository.create({
+      ...userDto,
+      password: await this.hashingProvider.hashPassword(userDto.password),
+    });
     return await this.userRepository.save(newUser);
   }
 
@@ -38,8 +42,8 @@ export class UsersService {
       });
     } catch (error) {
       throw new RequestTimeoutException('An error has occured', {
-        description: "DB not connect"
-      })
+        description: 'DB not connect',
+      });
     }
   }
 

@@ -5,7 +5,7 @@ import { UsersModule } from 'src/users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tweet } from './entities/tweet.entity';
 import { HashtagModule } from 'src/hashtag/hashtag.module';
-import { PaginationProvider } from 'src/common/pagination/pagination.provider';
+import { PaginationModule } from 'src/common/pagination/pagination.module';
 
 @Module({
   controllers: [TweetController],
@@ -14,7 +14,7 @@ import { PaginationProvider } from 'src/common/pagination/pagination.provider';
     UsersModule,
     HashtagModule,
     TypeOrmModule.forFeature([Tweet]),
-    PaginationProvider,
+    PaginationModule,
   ],
 })
 export class TweetModule {}
